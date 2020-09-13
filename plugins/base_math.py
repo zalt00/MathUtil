@@ -1,6 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from .plugin_base_class import Plugin
+from math_utils.math_sets import ListSet, Interval, NULL, REAL, RELATIVE, NATURAL
 import re
 import math
 
@@ -40,6 +41,14 @@ class BaseMathPlugin(Plugin):
         
         self.add_action(self.inf_parser)
         
+        self.add_action(self.base_sets_parser)
+        
+        self.list_sets_re = re.compile(r'\{([^,:}]*?)\}')
+        self.add_action(self.list_sets_parser)
+        
+        self.interval_sets_re = re.compile(r'([][])([^,:[\]]*?);([^,:[\]]*?)([][])')
+        self.add_action(self.interval_sets_parser)
+        
     def power_parser(self, line, locals_, globals_):
         line = self.power_re.sub(r'**\1', line)
         line = line.replace('⁻', '-').replace('⁰', '0').replace('¹', '1').replace('²', '2').replace('³', '3').replace('⁴', '4').replace('⁵', '5')
@@ -67,5 +76,49 @@ class BaseMathPlugin(Plugin):
             
         line = line.replace('∞', 'inf')
         return line
+    
+    def base_sets_parser(self, line, locals_, globals_):
+        for var_name, var in (('NULL', NULL), ('REAL', REAL), ('RELATIVE', RELATIVE), (NATURAL, 'NATURAL')):
+            if var_name not in globals_:
+                globals_[var_name] = var
+                
+        line = line.replace('ℝ', 'REAL').replace('∈', ' in ').replace('∅', 'NULL').replace('\\', '-').replace('U', ' | ')
+        return line
+    
+    def list_sets_parser(self, line, locals_, globals_):
+        if 'ListSet' not in globals_:
+            globals_['ListSet'] = ListSet
+        line = self.list_sets_re.sub(self._list_sets_parser_repl, line)
+        
+        return line
+    
+    @staticmethod
+    def _list_sets_parser_repl(match):
+        return f'ListSet(({match.group(0).replace(";", ",")}))'
+    
+    def interval_sets_parser(self, line, locals_, globals_):
+        if 'Interval' not in globals_:
+            globals_['Interval'] = Interval
+        
+        line = self.interval_sets_re.sub(self._interval_sets_parser_repl, line)
+        return line
 
+    @staticmethod
+    def _interval_sets_parser_repl(match):
+        if match.group(1) == '[':
+            instart = True
+        else:
+            instart = False
+            
+        if match.group(4) == ']':
+            instop = True
+        else:
+            instop = False
+            
+        start = match.group(2)
+        stop = match.group(3)
+        return f'Interval({start}, {stop}, {instart}, {instop})'
+            
+        
+        
 

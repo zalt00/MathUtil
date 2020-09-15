@@ -18,7 +18,11 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.commands = {'insert_key': self.insert_key, 'execute_current_line': self.execute_current_line}
         
+        self._raw_display = True
+        
         self.action_clear.triggered.connect(self.clear_console)
+        self.action_raw_display.triggered.connect(lambda: setattr(self, '_raw_display', True))
+        self.action_precompiled_display.triggered.connect(lambda: setattr(self, '_raw_display', False))
         
         self.load_plugins()
         
@@ -43,9 +47,12 @@ p, li { white-space: pre; }
         base_line = self.line_edit.text()
         line = self._precompile_line(base_line)
         execution, value = self._execute_line(line)
-        self.display(base_line)
+        if self._raw_display:
+            self.display(base_line)
+        else:
+            self.display(line)
         if value is not None:
-            if execution == 'error':
+            if execution != 0:
                 self.display('Error: ', color='#fcba03', end='')
                 self.display(str(value), color='#fa6176')
             else:
@@ -53,6 +60,11 @@ p, li { white-space: pre; }
                 self.display(str(value))
                 
         self.display('> ', end='')
+        
+        cursor = self.text_browser.textCursor()
+        cursor.setPosition(len(self.text_browser.toPlainText()) - 1)
+        self.text_browser.setTextCursor(cursor)
+        self.text_browser.ensureCursorVisible()
     
     def load_plugins(self):
         with open('plugins.txt') as file:
@@ -70,12 +82,13 @@ p, li { white-space: pre; }
     def _execute_line(self, line):
         try:
             try:
-                return 'good', eval(line, self._globals, self._locals)
+                return 0, eval(line, self._globals, self._locals)
             except SyntaxError:
-                exec(line, self._globals, self._locals)
-                return 'good', None
+                pass
+            exec(line, self._globals, self._locals)
+            return 0, None
         except Exception:
-            return 'error', traceback.format_exc().replace('\n', '<br>')
+            return -1, traceback.format_exc().replace('\n', '<br>')
             
     def display(self, msg, color='#000000', end='<br>'):
         self._additional_html_text += f'<span style=" color: {color};">{msg}</span>{end}'

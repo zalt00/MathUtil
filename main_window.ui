@@ -70,22 +70,23 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>951</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_plugin">
-    <property name="title">
-     <string>Plugin</string>
-    </property>
-    <addaction name="action_load_plugin"/>
-   </widget>
    <widget class="QMenu" name="menuConsole">
     <property name="title">
      <string>Console</string>
     </property>
+    <widget class="QMenu" name="menuChanger_l_affichage_2">
+     <property name="title">
+      <string>Changer l'affichage</string>
+     </property>
+     <addaction name="action_raw_display"/>
+     <addaction name="action_precompiled_display"/>
+    </widget>
     <addaction name="action_clear"/>
+    <addaction name="menuChanger_l_affichage_2"/>
    </widget>
-   <addaction name="menu_plugin"/>
    <addaction name="menuConsole"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -97,6 +98,26 @@ p, li { white-space: pre-wrap; }
   <action name="action_clear">
    <property name="text">
     <string>Vider</string>
+   </property>
+  </action>
+  <action name="actionbrute">
+   <property name="text">
+    <string>Brute</string>
+   </property>
+  </action>
+  <action name="actionPr_compil">
+   <property name="text">
+    <string>Précompilé</string>
+   </property>
+  </action>
+  <action name="action_raw_display">
+   <property name="text">
+    <string>Brut</string>
+   </property>
+  </action>
+  <action name="action_precompiled_display">
+   <property name="text">
+    <string>Précompilé</string>
    </property>
   </action>
  </widget>

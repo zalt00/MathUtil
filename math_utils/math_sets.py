@@ -22,7 +22,11 @@ class Set:
         def contains(n):
             return not self.contains(n)
         return Set(contains)
-
+    
+    def __and__(self, other_set):
+        def contains(n):
+            return (self.contains(n) and other_set.contains(n))
+        return Set(contains)
 
 NULL = Set(lambda _: False)
 REAL = Set(lambda n: isinstance(n, (int, float)))

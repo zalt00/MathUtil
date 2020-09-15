@@ -1,7 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from .plugin_base_class import Plugin
-from math_utils.math_sets import ListSet, Interval, NULL, REAL, RELATIVE, NATURAL
+from math_utils.math_sets import ListSet, Interval, NULL, REAL, RELATIVE, NATURAL, Set
 import re
 import math
 
@@ -12,10 +12,13 @@ class BaseMathPlugin(Plugin):
         self.add_shortcut('Alt+i', 'insert_key', '∞')
         self.add_shortcut('Alt+a', 'insert_key', '∀')
         self.add_shortcut('Alt+r', 'insert_key', 'ℝ')
+        self.add_shortcut('Alt+z', 'insert_key', 'ℤ')
+        self.add_shortcut('Alt+n', 'insert_key', 'ℕ')
         self.add_shortcut('Alt+c', 'insert_key', '∈')
         self.add_shortcut('Alt+o', 'insert_key', '∅')
         self.add_shortcut('Ctrl+-', 'insert_key', '⁻')
         self.add_shortcut('Alt+s', 'insert_key', '√(')
+        self.add_shortcut('Alt+&', 'insert_key', '∩')
         self.add_shortcut('Ctrl+9', 'insert_key', '⁹')
         self.add_shortcut('Ctrl+8', 'insert_key', '⁸')
         self.add_shortcut('Ctrl+7', 'insert_key', '⁷')
@@ -33,13 +36,16 @@ class BaseMathPlugin(Plugin):
         self.sqrt_re = re.compile(r'√([(].+[)])')
         self.add_action(self.sqrt_parser)
         
-        self.function_re = re.compile(r'([fghpijklm])[(]x[)][ ]?=(.*)')
+        self.function_re = re.compile(r'([fghpijklm])[(]([a-z])[)][ ]?=(.*)')
         self.add_action(self.function_parser)
         
-        self.multiplication_re = re.compile(r'(\d)([a-z])')
+        self.multiplication_re = re.compile(r'(\d|[)])([a-z(])')
         self.add_action(self.multiplication_parser)
         
         self.add_action(self.inf_parser)
+        
+        self.function_domain_re = re.compile(r'∀([a-z]) ?∈(.*?)(\|.*?)?: *')
+        self.add_action(self.function_domain_parser)
         
         self.add_action(self.base_sets_parser)
         
@@ -63,7 +69,7 @@ class BaseMathPlugin(Plugin):
         return line
     
     def function_parser(self, line, locals_, globals_):
-        line = self.function_re.sub(r'\1 = lambda x: \2', line)
+        line = self.function_re.sub(r'def \1(\2): return \3', line)
         return line
         
     def multiplication_parser(self, line, locals_, globals_):
@@ -78,11 +84,12 @@ class BaseMathPlugin(Plugin):
         return line
     
     def base_sets_parser(self, line, locals_, globals_):
-        for var_name, var in (('NULL', NULL), ('REAL', REAL), ('RELATIVE', RELATIVE), (NATURAL, 'NATURAL')):
+        for var_name, var in (('NULL', NULL), ('REAL', REAL), ('RELATIVE', RELATIVE), ('NATURAL', NATURAL), ('Set', Set)):
             if var_name not in globals_:
                 globals_[var_name] = var
                 
         line = line.replace('ℝ', 'REAL').replace('∈', ' in ').replace('∅', 'NULL').replace('\\', '-').replace('U', ' | ')
+        line = line.replace('ℤ', 'RELATIVE').replace('ℕ', 'NATURAL').replace('∩', '&')
         return line
     
     def list_sets_parser(self, line, locals_, globals_):
@@ -94,7 +101,7 @@ class BaseMathPlugin(Plugin):
     
     @staticmethod
     def _list_sets_parser_repl(match):
-        return f'ListSet(({match.group(0).replace(";", ",")}))'
+        return f'ListSet(({match.group(1).replace(";", ",")}))'
     
     def interval_sets_parser(self, line, locals_, globals_):
         if 'Interval' not in globals_:
@@ -119,6 +126,31 @@ class BaseMathPlugin(Plugin):
         stop = match.group(3)
         return f'Interval({start}, {stop}, {instart}, {instop})'
             
+    def function_domain_parser(self, line, locals_, globals_):
+        
+        if 'domain_restricted_function' not in globals_:
+            globals_['domain_restricted_function'] = self.domain_restricted_function
+            
+        line = self.function_domain_re.sub(self._function_domain_parser_repl, line)
+        return line
+    
+    @staticmethod
+    def _function_domain_parser_repl(match):
+        if match.group(3):
+            line = f'@domain_restricted_function({match.group(2)} & Set(lambda {match.group(1)}: {match.group(3)[1:]}))\n'
+        else:
+            line = f'@domain_restricted_function({match.group(2)})\n'
+            
+        return line
+    
+    def domain_restricted_function(self, domain):
+        def decorator(func):
+            def callback(x):
+                if x in domain:
+                    return func(x)
+                return math.nan
+            return callback
+        return decorator
         
         
 

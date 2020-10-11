@@ -101,7 +101,7 @@ class BaseMathPlugin(Plugin):
     
     @staticmethod
     def _list_sets_parser_repl(match):
-        return f'ListSet(({match.group(1).replace(";", ",")}))'
+        return f'ListSet(({match.group(1).replace(";", ",")},))'
     
     def interval_sets_parser(self, line, locals_, globals_):
         if 'Interval' not in globals_:

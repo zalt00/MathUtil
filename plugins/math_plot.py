@@ -13,17 +13,30 @@ class PlottingPlugin(Plugin):
         
         self.add_action(self.define_plot_function)
         
-    def plot(self, function, interval, precision=200, threshold_max=math.inf, threshold_min=-math.inf):
+    def plot(self, function, interval, precision=1000, threshold_max=math.inf, threshold_min=-math.inf):
         array_x = np.linspace(interval.start, interval.stop, precision)
         array_y = np.zeros(precision, dtype=np.float64)
+        no_definition_points = []
         
         for i, x in enumerate(array_x.flat):
-            value = function(x)
+            if math.isnan(function(round(x, 1))):
+                value = math.nan
+            else:
+                value = function(x)
             if value < threshold_min or value > threshold_max:
                 value = math.nan
+            if math.isnan(value):
+                no_definition_points.append(i)
             array_y[i] = value
         
-        plt.plot(array_x, array_y)
+        print(no_definition_points)
+        
+        previous_point = 0
+        for point in no_definition_points:
+            plt.plot(array_x[previous_point:point], array_y[previous_point:point])
+            previous_point = point
+        plt.plot(array_x[previous_point:], array_y[previous_point:])
+        
         plt.show()
         
     def define_plot_function(self, line, locals_, globals_):

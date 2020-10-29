@@ -357,9 +357,9 @@ class ExpressionMultiplicationTerm(AbstractTerm):
         expression = None
         for term in terms:
             if expression is None:
-                expression = term * self.expr_2
+                expression = self.expr_2 * term
             else:
-                expression += term * self.expr_2
+                expression += self.expr_2 * term
         if expression is None:
             raise ValueError("terms' length must be higher than 0")
         return expression.develop()
